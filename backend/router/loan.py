@@ -9,8 +9,15 @@ from models import Risk
 
 router = APIRouter(prefix="/loan", tags=["Loan"])
 
-model = joblib.load("model.pkl")
-features = joblib.load("features.pkl")
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+model_path = os.path.join(BASE_DIR, "model.pkl")
+features_path = os.path.join(BASE_DIR, "features.pkl")
+
+model = joblib.load(model_path)
+features = joblib.load(features_path)
 
 
 @router.post("/")
