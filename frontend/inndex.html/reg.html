@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register — Credit Risk</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0c10; --surface: #111318; --border: #1e2230;
+      --accent: #00e5ff; --accent2: #7c3aed; --text: #e8eaf0; --muted: #6b7280;
+      --error: #ef4444; --success: #10b981;
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px; pointer-events: none; z-index: 0;
+    }
+    .card {
+      position: relative; z-index: 1;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 48px 40px; width: 100%; max-width: 480px;
+      box-shadow: 0 0 60px rgba(0,0,0,0.4);
+      animation: slideUp 0.5s ease both;
+    }
+    @keyframes slideUp { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
+
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+    .logo-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent2), #4f46e5);
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .logo-text { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+
+    h2 { font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 800; margin-bottom: 6px; }
+    .subtitle { color: var(--muted); font-size: 0.88rem; margin-bottom: 32px; }
+
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-size: 0.82rem; font-weight: 500; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .input-wrap { position: relative; }
+    .input-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+    input {
+      width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 10px; padding: 13px 14px 13px 42px;
+      color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+    }
+    input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+    input.error-field { border-color: var(--error); }
+    .field-error { color: var(--error); font-size: 0.78rem; margin-top: 6px; display: none; }
+    .field-error.show { display: block; }
+
+    .btn {
+      width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500;
+      background: linear-gradient(135deg, var(--accent2), #4f46e5);
+      color: #fff; box-shadow: 0 0 30px rgba(124,58,237,0.3);
+      transition: all 0.2s; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 40px rgba(124,58,237,0.5); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert {
+      padding: 12px 16px; border-radius: 10px; font-size: 0.88rem;
+      margin-bottom: 20px; display: none; align-items: flex-start; gap: 10px;
+    }
+    .alert.show { display: flex; }
+    .alert-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--success); }
+    .alert-error   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3);  color: var(--error); }
+
+    /* ── TOKEN BOX ── */
+    .token-box {
+      display: none; margin-top: 24px;
+      background: linear-gradient(135deg, rgba(0,229,255,0.06), rgba(124,58,237,0.06));
+      border: 1px solid rgba(0,229,255,0.25);
+      border-radius: 14px; padding: 24px;
+      animation: slideUp 0.4s ease both;
+    }
+    .token-box.show { display: block; }
+
+    .token-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+    }
+    .token-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+
+    .copy-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.25);
+      color: var(--accent); padding: 6px 14px; border-radius: 6px;
+      cursor: pointer; font-size: 0.78rem; font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { background: rgba(0,229,255,0.2); }
+    .copy-btn.copied { color: var(--success); border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.1); }
+
+    .token-value {
+      font-family: monospace; font-size: 0.85rem; color: var(--accent);
+      word-break: break-all; background: rgba(0,0,0,0.3);
+      border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;
+      border: 1px solid rgba(0,229,255,0.1); line-height: 1.6;
+      user-select: all;
+    }
+
+    .token-warning {
+      display: flex; align-items: flex-start; gap: 8px;
+      background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 16px;
+      font-size: 0.8rem; color: #f59e0b;
+    }
+
+    /* countdown ring */
+    .countdown-wrap {
+      display: flex; align-items: center; gap: 14px;
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px;
+    }
+    .ring-wrap { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
+    .ring-wrap svg { transform: rotate(-90deg); }
+    .ring-bg { fill: none; stroke: var(--border); stroke-width: 3; }
+    .ring-fill { fill: none; stroke: var(--accent2); stroke-width: 3; stroke-linecap: round;
+      stroke-dasharray: 100; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
+    .ring-text {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; color: var(--accent);
+    }
+    .countdown-info { flex: 1; }
+    .countdown-info p { font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
+    .countdown-info strong { color: var(--text); }
+
+    .goto-btn {
+      width: 100%; padding: 13px; border: none; border-radius: 10px; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 0.92rem; font-weight: 500;
+      background: linear-gradient(135deg, #0891b2, var(--accent));
+      color: #000; transition: all 0.2s; margin-top: 14px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .goto-btn:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(0,229,255,0.3); }
+
+    .footer-link { text-align: center; margin-top: 24px; font-size: 0.85rem; color: var(--muted); }
+    .footer-link a { color: var(--accent); text-decoration: none; }
+    .footer-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">⬡</div>
+      <span class="logo-text">CreditRisk AI</span>
+    </div>
+
+    <!-- FORM -->
+    <div id="formView">
+      <h2>Create Account</h2>
+      <p class="subtitle">Register to access loan risk prediction</p>
+
+      <div class="alert alert-error" id="alertError">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="alertErrorMsg"></span>
+      </div>
+
+      <div class="form-group">
+        <label>First Name</label>
+        <div class="input-wrap">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="text" id="firstName" placeholder="John"/>
+        </div>
+        <div class="field-error" id="firstNameErr">First name is required</div>
+      </div>
+
+      <div class="form-group">
+        <label>Last Name</label>
+        <div class="input-wrap">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="text" id="lastName" placeholder="Doe"/>
+        </div>
+        <div class="field-error" id="lastNameErr">Last name is required</div>
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <div class="input-wrap">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" id="email" placeholder="john@example.com"/>
+        </div>
+        <div class="field-error" id="emailErr">Valid email is required</div>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="input-wrap">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" id="password" placeholder="Min 6 characters"/>
+        </div>
+        <div class="field-error" id="passwordErr">Password must be at least 6 characters</div>
+      </div>
+
+      <button class="btn" id="registerBtn" onclick="handleRegister()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">Create Account</span>
+      </button>
+
+      <div class="footer-link">Already have an account? <a href="login.html">Login</a></div>
+    </div>
+
+    <!-- TOKEN BOX — shown after successful registration -->
+    <div class="token-box" id="tokenBox">
+
+      <div class="alert alert-success show" style="margin-bottom:20px;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Registered successfully! Copy your verification token below.</span>
+      </div>
+
+      <div class="token-header">
+        <div class="token-label">📋 Verification Token</div>
+        <button class="copy-btn" id="copyBtn" onclick="copyToken()">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Token
+        </button>
+      </div>
+
+      <div class="token-value" id="tokenValue">—</div>
+
+      <div class="token-warning">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Copy this token now! You'll need it on the next page to activate your account.</span>
+      </div>
+
+      <!-- Countdown ring -->
+      <div class="countdown-wrap">
+        <div class="ring-wrap">
+          <svg viewBox="0 0 36 36" width="40" height="40">
+            <circle class="ring-bg" cx="18" cy="18" r="15.9"/>
+            <circle class="ring-fill" id="ringFill" cx="18" cy="18" r="15.9"/>
+          </svg>
+          <div class="ring-text" id="ringText">60</div>
+        </div>
+        <div class="countdown-info">
+          <p>Redirecting to verification page in <strong id="countdownNum">60</strong> seconds</p>
+          <p style="font-size:0.75rem;">Or click below to go now</p>
+        </div>
+      </div>
+
+      <button class="goto-btn" onclick="goVerify()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Go to Verification Page Now
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    const API = "http://localhost:8000";
+    const COUNTDOWN_SECONDS = 60;
+    let countdownTimer = null;
+
+    function validate() {
+      let ok = true;
+      const fields = [
+        { id: 'firstName', err: 'firstNameErr', check: v => v.trim().length > 0 },
+        { id: 'lastName',  err: 'lastNameErr',  check: v => v.trim().length > 0 },
+        { id: 'email',     err: 'emailErr',     check: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) },
+        { id: 'password',  err: 'passwordErr',  check: v => v.length >= 6 },
+      ];
+      fields.forEach(({ id, err, check }) => {
+        const el = document.getElementById(id);
+        const errEl = document.getElementById(err);
+        if (!check(el.value)) {
+          el.classList.add('error-field');
+          errEl.classList.add('show');
+          ok = false;
+        } else {
+          el.classList.remove('error-field');
+          errEl.classList.remove('show');
+        }
+      });
+      return ok;
+    }
+
+    function setLoading(loading) {
+      document.getElementById('registerBtn').disabled = loading;
+      document.getElementById('spinner').style.display = loading ? 'block' : 'none';
+      document.getElementById('btnText').textContent = loading ? 'Registering...' : 'Create Account';
+    }
+
+    function showError(msg) {
+      document.getElementById('alertErrorMsg').textContent = msg;
+      document.getElementById('alertError').classList.add('show');
+    }
+
+    function startCountdown() {
+      let seconds = COUNTDOWN_SECONDS;
+      const ringFill = document.getElementById('ringFill');
+      const ringText = document.getElementById('ringText');
+      const countdownNum = document.getElementById('countdownNum');
+      const circumference = 100; // stroke-dasharray value
+
+      countdownTimer = setInterval(() => {
+        seconds--;
+        ringText.textContent = seconds;
+        countdownNum.textContent = seconds;
+
+        // Update ring — goes from full to empty
+        const offset = circumference - (seconds / COUNTDOWN_SECONDS) * circumference;
+        ringFill.style.strokeDashoffset = offset;
+
+        // Change ring color as time runs out
+        if (seconds <= 10) {
+          ringFill.style.stroke = '#ef4444';
+        } else if (seconds <= 20) {
+          ringFill.style.stroke = '#f59e0b';
+        }
+
+        if (seconds <= 0) {
+          clearInterval(countdownTimer);
+          goVerify();
+        }
+      }, 1000);
+    }
+
+    function showTokenBox(token, customerId) {
+      // Hide form
+      document.getElementById('formView').style.display = 'none';
+
+      // Show token box
+      document.getElementById('tokenValue').textContent = token;
+      document.getElementById('tokenBox').classList.add('show');
+
+      // Save customer_id for verify page
+      if (customerId) sessionStorage.setItem('customer_id', customerId);
+      // Save token so verify page can auto-fill it
+      sessionStorage.setItem('verification_token', token);
+
+      // Start countdown
+      startCountdown();
+    }
+
+    async function handleRegister() {
+      document.getElementById('alertError').classList.remove('show');
+      if (!validate()) return;
+
+      setLoading(true);
+      try {
+        const res = await fetch(`${API}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: document.getElementById('firstName').value.trim(),
+            last_name:  document.getElementById('lastName').value.trim(),
+            email:      document.getElementById('email').value.trim(),
+            password:   document.getElementById('password').value,
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.detail || 'Registration failed. Please try again.');
+          return;
+        }
+
+        // Get token from response
+        const token = data['verification token'] || data['verification_token'] || '';
+        const customerId = data['customer_id'] || '';
+
+        showTokenBox(token, customerId);
+
+      } catch (err) {
+        showError('Network error. Is the backend running on port 8000?');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function copyToken() {
+      const token = document.getElementById('tokenValue').textContent;
+      navigator.clipboard.writeText(token).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.classList.add('copied');
+        btn.innerHTML = `<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = `<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Token`;
+        }, 2000);
+      });
+    }
+
+    function goVerify() {
+      clearInterval(countdownTimer);
+      window.location.href = 'verify.html';
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') handleRegister(); });
+  </script>
+</body>
+</html>

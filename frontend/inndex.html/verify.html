@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Verify — Credit Risk</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0c10; --surface: #111318; --border: #1e2230;
+      --accent: #00e5ff; --accent2: #7c3aed; --text: #e8eaf0; --muted: #6b7280;
+      --error: #ef4444; --success: #10b981;
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px; pointer-events: none; z-index: 0;
+    }
+    .card {
+      position: relative; z-index: 1;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 48px 40px; width: 100%; max-width: 460px;
+      box-shadow: 0 0 60px rgba(0,0,0,0.4);
+      animation: slideUp 0.5s ease both;
+    }
+    @keyframes slideUp { from { opacity:0; transform: translateY(24px); } to { opacity:1; transform: translateY(0); } }
+
+    .icon-wrap {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(124,58,237,0.15));
+      border: 1px solid rgba(0,229,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; margin-bottom: 24px;
+    }
+    h2 { font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 800; margin-bottom: 6px; }
+    .subtitle { color: var(--muted); font-size: 0.88rem; margin-bottom: 32px; line-height: 1.6; }
+
+    .form-group { margin-bottom: 24px; }
+    label { display: block; font-size: 0.82rem; font-weight: 500; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .input-wrap { position: relative; }
+    .input-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+    input {
+      width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 10px; padding: 13px 14px 13px 42px;
+      color: var(--text); font-family: monospace; font-size: 0.88rem;
+      transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+    }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,0.1); }
+    input.error-field { border-color: var(--error); }
+    .field-error { color: var(--error); font-size: 0.78rem; margin-top: 6px; display: none; }
+    .field-error.show { display: block; }
+
+    .btn {
+      width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500;
+      background: linear-gradient(135deg, #0891b2, var(--accent));
+      color: #000; box-shadow: 0 0 30px rgba(0,229,255,0.2);
+      transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 40px rgba(0,229,255,0.4); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert {
+      padding: 12px 16px; border-radius: 10px; font-size: 0.88rem;
+      margin-bottom: 20px; display: none; align-items: flex-start; gap: 10px;
+    }
+    .alert.show { display: flex; }
+    .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--error); }
+
+    .footer-link { text-align: center; margin-top: 24px; font-size: 0.85rem; color: var(--muted); }
+    .footer-link a { color: var(--accent); text-decoration: none; }
+    .footer-link a:hover { text-decoration: underline; }
+
+    /* ── SUCCESS VIEW ── */
+    #successView { display: none; }
+    #successView.show { display: block; animation: slideUp 0.5s ease both; }
+
+    .success-icon {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: rgba(16,185,129,0.1); border: 2px solid rgba(16,185,129,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; margin: 0 auto 24px;
+      animation: popIn 0.5s ease both;
+    }
+    @keyframes popIn { from { transform: scale(0.4); opacity:0; } to { transform: scale(1); opacity:1; } }
+
+    .success-title {
+      font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800;
+      color: var(--success); text-align: center; margin-bottom: 8px;
+    }
+    .success-sub { color: var(--muted); font-size: 0.88rem; text-align: center; margin-bottom: 28px; line-height: 1.6; }
+
+    .cid-box {
+      background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(0,229,255,0.05));
+      border: 1px solid rgba(124,58,237,0.35);
+      border-radius: 16px; padding: 26px 24px; margin-bottom: 24px; text-align: center;
+    }
+    .cid-label {
+      font-size: 0.73rem; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 2px; margin-bottom: 14px;
+    }
+    .cid-value {
+      font-family: 'Syne', sans-serif; font-size: 2.6rem; font-weight: 800;
+      color: var(--accent); letter-spacing: 6px; margin-bottom: 12px;
+    }
+    .cid-note { font-size: 0.78rem; color: var(--muted); line-height: 1.7; }
+    .cid-note strong { color: var(--text); }
+
+    .copy-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.25);
+      color: var(--accent); padding: 9px 22px; border-radius: 8px;
+      cursor: pointer; font-size: 0.82rem; font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s; margin-top: 14px;
+    }
+    .copy-btn:hover { background: rgba(0,229,255,0.15); }
+    .copy-btn.copied { color: var(--success); border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.08); }
+
+    .steps-box {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; margin-bottom: 24px;
+    }
+    .steps-title { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+    .step-item {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 0.85rem; color: var(--text); margin-bottom: 12px;
+    }
+    .step-item:last-child { margin-bottom: 0; }
+    .step-num {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(124,58,237,0.2); border: 1px solid rgba(124,58,237,0.4);
+      color: var(--accent2); font-size: 0.72rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .login-btn {
+      width: 100%; padding: 15px; border: none; border-radius: 10px; cursor: pointer;
+      font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--accent2), #4f46e5);
+      color: #fff; box-shadow: 0 0 30px rgba(124,58,237,0.3);
+      transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .login-btn:hover { transform: translateY(-1px); box-shadow: 0 0 40px rgba(124,58,237,0.5); }
+  </style>
+</head>
+<body>
+  <div class="card">
+
+    <!-- VERIFY FORM -->
+    <div id="verifyView">
+      <div class="icon-wrap">🔐</div>
+      <h2>Verify Account</h2>
+      <p class="subtitle">Enter the verification token sent to your email to activate your account.</p>
+
+      <div class="alert alert-error" id="alertError">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="alertErrorMsg"></span>
+      </div>
+
+      <div class="form-group">
+        <label>Verification Token</label>
+        <div class="input-wrap">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          <input type="text" id="token" placeholder="Paste your verification token here"/>
+        </div>
+        <div class="field-error" id="tokenErr">Please enter your verification token</div>
+      </div>
+
+      <button class="btn" id="verifyBtn" onclick="handleVerify()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">Verify Account</span>
+      </button>
+
+      <div class="footer-link">Already verified? <a href="login.html">Login here</a></div>
+    </div>
+
+    <!-- SUCCESS VIEW — shown after verification -->
+    <div id="successView">
+      <div class="success-icon">✅</div>
+      <div class="success-title">Account Verified!</div>
+      <p class="success-sub">Your account is active. Save your Customer ID below — you need it to login.</p>
+
+      <div class="cid-box">
+        <div class="cid-label">🪪 Your Customer ID</div>
+        <div class="cid-value" id="customerIdDisplay">—</div>
+        <div class="cid-note">
+          Use this as your <strong>username</strong> on the login page.<br/>
+          Your password is the one you set during registration.
+        </div>
+        <button class="copy-btn" id="copyBtn" onclick="copyId()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy ID
+        </button>
+      </div>
+
+      <div class="steps-box">
+        <div class="steps-title">Next Steps</div>
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <span>Click <strong>Go to Login</strong> below</span>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <span>Enter your <strong>Customer ID</strong> as username</span>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <span>Enter the <strong>password</strong> you registered with</span>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <span>Submit your loan details for <strong>AI risk assessment</strong></span>
+        </div>
+      </div>
+
+      <button class="login-btn" onclick="goLogin()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Go to Login
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    const API = "http://localhost:8000";
+
+    function setLoading(loading) {
+      document.getElementById('verifyBtn').disabled = loading;
+      document.getElementById('spinner').style.display = loading ? 'block' : 'none';
+      document.getElementById('btnText').textContent = loading ? 'Verifying...' : 'Verify Account';
+    }
+
+    function showError(msg) {
+      document.getElementById('alertErrorMsg').textContent = msg;
+      document.getElementById('alertError').classList.add('show');
+    }
+
+    function showSuccessView(customerId) {
+      document.getElementById('verifyView').style.display = 'none';
+      document.getElementById('successView').classList.add('show');
+      document.getElementById('customerIdDisplay').textContent = customerId || '—';
+      if (customerId) sessionStorage.setItem('customer_id', customerId);
+    }
+
+    async function handleVerify() {
+      document.getElementById('alertError').classList.remove('show');
+
+      const token = document.getElementById('token').value.trim();
+      const tokenEl = document.getElementById('token');
+      const tokenErrEl = document.getElementById('tokenErr');
+
+      if (!token) {
+        tokenEl.classList.add('error-field');
+        tokenErrEl.classList.add('show');
+        return;
+      }
+      tokenEl.classList.remove('error-field');
+      tokenErrEl.classList.remove('show');
+
+      setLoading(true);
+      try {
+        const res = await fetch(`${API}/auth/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.detail || 'Verification failed. Invalid or expired token.');
+          return;
+        }
+
+        // Extract customer_id from response string: "successfully verified id 12345"
+        let customerId = sessionStorage.getItem('customer_id'); // fallback from reg page
+        if (data.verification_status) {
+          const match = data.verification_status.match(/id\s+(\d+)/);
+          if (match) customerId = match[1];
+        }
+
+        showSuccessView(customerId);
+
+      } catch (err) {
+        showError('Network error. Is the backend running on port 8000?');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function copyId() {
+      const id = document.getElementById('customerIdDisplay').textContent;
+      navigator.clipboard.writeText(id).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.classList.add('copied');
+        btn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy ID`;
+        }, 2000);
+      });
+    }
+
+    function goLogin() {
+      // Pre-fill customer_id on login page via sessionStorage
+      window.location.href = 'login.html';
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') handleVerify(); });
+
+    // Auto-fill token if coming from reg page
+    window.addEventListener('load', () => {
+      const savedToken = sessionStorage.getItem('verification_token');
+      if (savedToken) {
+        document.getElementById('token').value = savedToken;
+      }
+    });
+  </script>
+</body>
+</html>
