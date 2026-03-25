@@ -10,7 +10,7 @@ from sklearn.metrics import roc_auc_score
 
 import numpy as np
 
-df = pd.read_csv(r"C:\Users\surya\ML_Project\loan.csv")
+df = pd.read_csv("loan.csv")
 
 df["fico_mean"] = (df["fico_range_low"] + df["fico_range_high"]) / 2
 
