@@ -21,31 +21,35 @@ This system predicts whether a loan applicant is a **credit risk** using a train
 
 ```
 web/
-├── main.py                  # FastAPI app entry point
-├── db.py                    # Database connection & session
-├── models.py                # SQLAlchemy ORM models
-├── schemas.py               # Pydantic request schemas
-├── auth.py                  # JWT auth, password hashing, token utils
-├── email_utils.py           # Email sending utility (fastapi-mail)
-├── model.pkl                # Trained LightGBM pipeline
-├── features.pkl             # Feature list for ML model
-├── .env                     # Environment variables (not committed)
-├── requirements.txt         # Python dependencies
+project_root/
 │
-├── router/
-│   ├── reg.py               # Registration endpoint
-│   ├── verify.py            # Email verification endpoint
-│   ├── login.py             # Login endpoint
-│   └── loan.py              # Loan risk prediction endpoint
+├── backend/
+│   ├── main.py                  # FastAPI entry point
+│   ├── db.py                    # DB connection
+│   ├── models.py                # SQLAlchemy models
+│   ├── schemas.py               # Pydantic schemas
+│   ├── auth.py                  # JWT + hashing
+│   ├── email_utils.py           # Email logic
+│   ├── ml.py                    # ML training script
+│   ├── model.pkl                # Trained model
+│   ├── features.pkl             # Feature list
+│   ├── .env                     # Secrets (never commit)
+│   ├── requirements.txt         # Dependencies
+│   │
+│   └── router/
+│       ├── reg.py
+│       ├── verify.py
+│       ├── login.py
+│       └── loan.py
 │
-├── ml.py                    # ML model training script
+├── frontend/
+│   ├── home.html
+│   ├── reg.html
+│   ├── verify.html
+│   ├── login.html
+│   └── loan.html
 │
-└── frontend/
-    ├── home.html            # Landing page
-    ├── reg.html             # Registration page
-    ├── verify.html          # Verification page (shows Customer ID)
-    ├── login.html           # Login page
-    └── loan.html            # Loan assessment form + results
+└── README.md
 ```
 
 ---
