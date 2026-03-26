@@ -1,285 +1,125 @@
-# 🏦 Credit Risk Prediction System
+# Credit Risk Prediction — Full Stack
 
-An AI-powered loan risk assessment web application built with **FastAPI**, **LightGBM**, **PostgreSQL**, and a pure HTML/CSS/JS frontend.
+Full-stack credit risk assessment app — FastAPI backend + PostgreSQL + complete frontend UI.
 
----
-
-## 📌 Project Overview
-
-This system predicts whether a loan applicant is a **credit risk** using a trained machine learning model. It provides:
-
-- Probability of Default (PD)
-- Adjusted PD
-- Expected Loss
-- Monthly EMI
-- Affordability Ratio
-- Final Decision: **Accept** or **Reject**
+> Backend-only version (no frontend, no auth): [credit_risk_prediction](https://github.com/SVChaithanya/credit_risk_prediction)
 
 ---
 
-## 🗂️ Project Structure
+## Tech Stack
 
+- FastAPI
+- LightGBM
+- PostgreSQL
+- SQLAlchemy
+- Pydantic v2
+- HTML / CSS / JS (Frontend)
+
+---
+
+## Project Structure
 ```
-web/
-project_root/
-│
-├── backend/
-│   ├── main.py                  # FastAPI entry point
-│   ├── db.py                    # DB connection
-│   ├── models.py                # SQLAlchemy models
-│   ├── schemas.py               # Pydantic schemas
-│   ├── auth.py                  # JWT + hashing
-│   ├── email_utils.py           # Email logic
-│   ├── ml.py                    # ML training script
-│   ├── model.pkl                # Trained model
-│   ├── features.pkl             # Feature list
-│   ├── .env                     # Secrets (never commit)
-│   ├── requirements.txt         # Dependencies
-│   │
-│   └── router/
-│       ├── reg.py
-│       ├── verify.py
-│       ├── login.py
-│       └── loan.py
-│
-├── frontend/
-│   ├── home.html
-│   ├── reg.html
-│   ├── verify.html
-│   ├── login.html
-│   └── loan.html
-│
-└── README.md
+credit_risk_prediction_fullstack/
+├── backend/    → FastAPI + LightGBM + PostgreSQL
+└── frontend/   → Full UI (results page, risk display, EMI breakdown)
 ```
 
 ---
 
-## ⚙️ Tech Stack
+## What It Does
 
-| Layer | Technology |
-|---|---|
-| Backend | FastAPI (Python) |
-| ML Model | LightGBM + Scikit-learn Pipeline |
-| Database | PostgreSQL + SQLAlchemy |
-| Auth | JWT (Access + Refresh Tokens) |
-| Email | fastapi-mail (SMTP) |
-| Frontend | HTML + CSS + Vanilla JavaScript |
+User fills a loan application form → backend runs ML inference → frontend displays:
 
----
-
-## 🧠 ML Model
-
-Trained on the **Lending Club loan dataset** using a LightGBM classifier.
-
-**Features used:**
-
-| Feature | Description |
-|---|---|
-| `loan_amnt` | Requested loan amount |
-| `annual_inc` | Annual income of applicant |
-| `dti` | Debt-to-income ratio |
-| `fico_mean` | Average FICO credit score |
-| `int_rate` | Interest rate (%) |
-| `term` | Loan term (36 or 60 months) |
-| `grade` | Loan grade (A–G) |
-| `purpose` | Purpose of the loan |
-
-**Target:** Binary — `1` = Bad loan (Default/Charged Off), `0` = Good loan
-
-**Metric:** ROC-AUC Score
+- Approved or Rejected
+- Risk Level (Low / Medium / High)
+- Prediction score (probability of default)
+- EMI calculation based on loan amount + term
+- Full decision breakdown
 
 ---
 
-## 🚀 Getting Started
+## System Design Highlights
 
-### 1. Clone the Repository
+### Backend (`/backend`)
 
-```bash
-git clone https://github.com/your-username/credit-risk-prediction.git
-cd credit-risk-prediction
-```
-
-### 2. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Set Up Environment Variables
-
-Create a `.env` file in the root directory:
-
-```env
-DATABASE_URL=postgresql://username:password@localhost/dbname
-MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_app_password
-MAIL_FROM=your_email@gmail.com
-SECRET_KEY=your_jwt_secret_key
-```
-
-> ⚠️ Never commit your `.env` file. It is listed in `.gitignore`.
-
-### 4. Set Up the Database
-
-Make sure PostgreSQL is running, then run:
-
-```bash
-python models.py
-```
-
-This auto-creates all tables via SQLAlchemy.
-
-If the `risk` table is missing the `customer_id` column, run this SQL:
-
-```sql
-ALTER TABLE risk ADD COLUMN customer_id INTEGER;
-ALTER TABLE risk ADD CONSTRAINT uq_risk_customer_id UNIQUE (customer_id);
-```
-
-### 5. Train the ML Model
-
-```bash
-python ml.py
-```
-
-This generates `model.pkl` and `features.pkl` in the root directory.
-
-### 6. Start the Backend
-
-```bash
-uvicorn main:app --reload
-```
-
-Backend runs at: `http://localhost:8000`
-
-API docs available at: `http://localhost:8000/docs`
-
-### 7. Serve the Frontend
-
-```bash
-python -m http.server 5500
-```
-
-Open `http://localhost:5500/home.html` in your browser.
+- Loan application validation via Pydantic v2 (8 input fields, field-level error responses)
+- LightGBM inference with business rules pipeline:
+  - EMI-to-income cap (≤40%)
+  - Purpose-based loan ceilings
+  - Grade + term risk multipliers
+  - Adjusted PD threshold at 0.30
+- PostgreSQL storage via SQLAlchemy ORM (prediction + audit_log in atomic transaction)
+- Latency: ~45ms avg after moving model load to startup lifespan event (was ~380ms)
+- Rate limiting via Slowapi (10 req/min per IP)
 
 ---
 
-## 🔐 API Endpoints
+### Frontend (`/frontend`)
 
-### Auth
+- Approval/rejection status with visual indicator
+- Risk level badge (Low / Medium / High)
+- Predicted probability of default
+- EMI amount calculated from loan inputs
+- Clean form for submitting new applications
+
+> Frontend was scaffolded using an AI tool (Claude) based on my UI design spec.
+> Backend logic, ML integration, and DB layer are entirely my own work.
+
+---
+
+## API Endpoints
 
 | Method | Endpoint | Description |
-|---|---|---|
-| POST | `/auth/register` | Register new user |
-| POST | `/auth/verify` | Verify account with token |
-| POST | `/auth/login` | Login with Customer ID + password |
-
-### Loan
-
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| POST | `/loan/` | Submit loan for risk assessment | ✅ Bearer Token |
+|--------|----------|-------------|
+| POST | /predict | Submit application, get full prediction response |
+| GET | /health | Health check |
 
 ---
 
-## 🖥️ Frontend Flow
-
-```
-home.html
-   │
-   ├── reg.html        → Register → Token shown on screen (60s countdown)
-   │                                + Token sent to email
-   │
-   ├── verify.html     → Paste token → Account activated → Customer ID shown
-   │
-   ├── login.html      → Login with Customer ID + password
-   │                     (Customer ID auto-filled from previous step)
-   │
-   └── loan.html       → Fill loan details → Get AI risk assessment result
-```
-
----
-
-## 📊 Loan Assessment Response
-
+## Sample Response
 ```json
 {
-  "pd": 0.23,
-  "adjusted_pd": 0.245,
-  "expected_loss": 12250.00,
-  "emi": 1652.73,
-  "affordability_ratio": 0.33,
-  "decision": "accept",
-  "risk_level": "low"
+  "decision": "Approved",
+  "risk_level": "Medium",
+  "probability_of_default": 0.27,
+  "emi": 4850.00,
+  "adjusted_pd": 0.27,
+  "message": "Application meets threshold criteria"
 }
 ```
 
-### Decision Logic
-
-| Condition | Decision |
-|---|---|
-| `affordability_ratio ≤ purpose_cap` AND `adjusted_pd ≤ 0.30` | ✅ Accept |
-| Otherwise | ❌ Reject |
-
 ---
 
-## 📦 Requirements
+## Local Setup
 
-```
-fastapi
-uvicorn
-sqlalchemy
-psycopg2-binary
-python-dotenv
-passlib[bcrypt]
-python-jose[cryptography]
-fastapi-mail
-lightgbm
-scikit-learn
-pandas
-numpy
-joblib
-pydantic[email]
-```
-
-Generate with:
-
+**Backend:**
 ```bash
-pip freeze > requirements.txt
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
 ```
 
----
-
-## 🔒 Security Notes
-
-- Passwords are hashed using **bcrypt**
-- Authentication uses **JWT** (access + refresh tokens)
-- CORS is enabled for all origins (restrict in production)
-- Never expose your `.env` file
-
----
-
-## 📁 .gitignore
-
-Make sure your `.gitignore` includes:
-
-```
-.env
-*.pkl
-__pycache__/
-*.pyc
-loan.csv
-venv/
+**Frontend:**
+```bash
+cd frontend
+python -m http.server 3000
 ```
 
----
-
-## 👨‍💻 Author
-
-**Surya** — [GitHub](https://github.com/SVChaithanya/Fullstack_Credit-Risk-Prediction)
+Swagger UI: http://localhost:8000/docs
 
 ---
 
-## 📄 License
+## Deployment
 
-This project is for educational purposes.
+- Backend: deploying to Render (in progress)
+- Frontend: deploying to Render static site (in progress)
+- Docker setup: in progress
+
+---
+
+## Known Limitations
+
+- Rate limiting is in-memory — breaks under horizontal scaling (needs Redis)
+- No user authentication on this version
+- Concurrency not load tested beyond 50 threads on a single machine
+- Frontend scaffolded with AI tooling — not hand-written CSS/JS
